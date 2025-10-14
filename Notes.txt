@@ -1,0 +1,62 @@
+virtual environment -- 
+we create virtual environment to handle all the deoendencies
+of our app.
+libraries 
+whatever we download 
+
+
+every step or every new library/framework
+goes through these steps 
+1.installing
+2.importing
+3.configuration if needed
+4.initialization
+5.integration
+6.use 
+
+how to pass values in routes
+Session
+flash 
+
+
+
+Flask-Migrate
+When in between of development database has some important data stored
+we try to add a column in the database it doesnt add because db.create_all() is for just 
+creating the tablesss that are not there (if not there)
+To modify table properties in between u need to use Flask-Migrate
+Flask-Migrate will help you track your migrations in database as well as quickly modify them
+
+
+After integration
+Whenever you are running the migration for the first time 
+you need to initialize migrationss folder
+
+initialize migration folder
+flask db init
+
+everytime u make changes to the database 
+flask db migrate -m "Changes that u did to communicate as a message"
+flask db upgrade
+
+
+2 things 
+1. Adding origin -- in which repo should i send
+
+2. Authrntication
+
+
+
+
+Github
+Make git init to initialize repo in local 
+then create repository in github 
+add origin for the path in which u want to send the code
+create an ssh key in terminal
+activate agent and save the key
+copy key and add it to github same profile
+git add .
+git commit -m "message of commit"
+git push 
+
+
