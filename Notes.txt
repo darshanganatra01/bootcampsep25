@@ -52,11 +52,18 @@ Github
 Make git init to initialize repo in local 
 then create repository in github 
 add origin for the path in which u want to send the code
-create an ssh key in terminal
+
+create an ssh key in terminal----> ssh-keygen -t ed25519 -C "<your-email>"
 activate agent and save the key
-copy key and add it to github same profile
+eval "$(ssh-agent -s)"
+ssh-add ~/.ssh/id_ed25519
+copy key and add it to github same profile --> # print the public key to terminal
+cat ~/.ssh/id_ed25519.pub
+
+(If a collaborator they will clone)
+
 git add .
 git commit -m "message of commit"
 git push 
-
-
+git status to see the commit changes
+Added notes
