@@ -23,18 +23,49 @@ migrate = Migrate(app,db)  #integration of migrate with app and db
 app.app_context().push()
 
 
-#use
-
 class Role(db.Model):
     rid = db.Column(db.Integer, primary_key=True)
     rolename = db.Column(db.String(100),unique=True,nullable=False)
     description = db.Column(db.String(200),nullable=True)
+
+#<User 1> ---> <Role 3>
+#<Role 3> ---> <User 1><User 4><User 5>
 
 class User(db.Model):
     uid = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(100),unique=True,nullable=False)
     password = db.Column(db.String(100),nullable=False)
     f_rid = db.Column(db.Integer,db.ForeignKey(Role.rid),nullable=True)
+
+    roles = db.relationship(Role,backref='users',lazy=True)
+
+class Theatre(db.Model):   #Theatre is like a Doctor 
+    thid = db.Column(db.Integer,primary_key=True)
+    theatre_name = db.Column(db.String,unique=True,nullable=False)
+    franchise = db.Column(db.String,nullable=False) #indirectly refers to department 
+    f_uid = db.Column(db.Integer,db.ForeignKey(User.uid),nullable=False)
+
+    user = db.relationship(User,backref='theatres',lazy=True)
+
+class Booking(db.Model):   #Booking is like an Appointment
+    bid = db.Column(db.Integer,primary_key=True)
+    theatre_id = db.Column(db.Integer,db.ForeignKey(Theatre.thid),nullable=False)
+    # CHANGED: nullable is now True so theatres can create empty slots
+    user_id = db.Column(db.Integer,db.ForeignKey(User.uid),nullable=True) 
+    # TYPO FIX: Corrected db.Datetime to db.DateTime
+    Booking_start = db.Column(db.DateTime,nullable=False)
+    Booking_end = db.Column(db.DateTime,nullable=True)
+    status = db.Column(db.Integer,nullable=False)  # 0=Available, 1=Booked, 3=Canceled 4=Completed
+    user = db.relationship(User,backref='bookings')
+    theatre = db.relationship(Theatre, backref='bookings')
+
+class CompBookings(db.Model):
+    cmbid = db.Column(db.Integer,primary_key=True)
+    bid = db.Column(db.Integer,db.ForeignKey(Booking.bid),nullable=False,unique=True)
+    user_review = db.Column(db.String)
+    #Doctors prescription
+    #suggestion
+    #Food
 
 
 
@@ -72,6 +103,11 @@ def login():
         #this below thing will work only if user exitst
         
         if check_user:
+            print(check_user.roles)
+            print(check_user.roles.rolename)
+            print(check_user.roles.description)
+            print(check_user.roles.rid)
+            print(check_user.roles.users) #List of users of this role 
             if check_user.password == form_password:
                 print("password is correct dshn=board came")
                 session['email'] = check_user.email
@@ -111,8 +147,9 @@ def admin_login():
 
 @app.route("/admin_dashboard")
 def admin_dashboard():
+    theatres=Theatre.query.all()
     email = session.get('email')
-    return render_template("admin_dashboard.html",jinjaemail=email)
+    return render_template("admin_dashboard.html",jinjaemail=email, jinja_theatres=theatres)
 
 @app.route("/theatre_login",methods=['GET','POST'])
 def theatre_login():
@@ -179,6 +216,46 @@ def dashboard():
     email = session.get('email')
     return render_template("dashboard.html",jinjaemail=email)
 
+@app.route("/create_theatre",methods=['GET','POST'])
+def create_theatre():
+    if request.method=="GET":
+        return render_template("create_theatre.html")
+    else:
+        #User--> Email Password Roleid=3 #Theatre--> Theatre name, franchise, f_uid
+        form_email = request.form["email"]
+        form_password = request.form["password"]
+        role_id = 3
+        form_theatre_name = request.form["theatrename"]
+        form_franchise = request.form["franchise"]
+
+        check_user = User.query.filter_by(email=form_email).first()
+        if check_user:
+            flash("User already exists please choose another email")
+            return redirect('/create_theatre')
+        else:
+            user = User(email=form_email,password=form_password,f_rid=role_id)
+            db.session.add(user)
+            db.session.commit()
+            theatre = Theatre(theatre_name=form_theatre_name,franchise=form_franchise,f_uid=user.uid)
+            db.session.add(theatre)
+            db.session.commit()
+            flash("Theatre created successfully")
+            return redirect('/admin_dashboard')
+        
+@app.route("/edit_theatre/<theatre_id>",methods=['GET','POST'])
+def edit_theatre(theatre_id):
+    theatre = Theatre.query.get(theatre_id)
+    if request.method=="GET":
+        return render_template("edit_theatre.html",jinja_theatre=theatre)
+    else:
+        form_theatre_name = request.form["theatrename"]
+        form_franchise = request.form["franchise"]
+        theatre.theatre_name = form_theatre_name
+        theatre.franchise = form_franchise
+        db.session.commit()
+        flash("Theatre updated successfully")
+        return redirect('/admin_dashboard')
+
 
 
 
@@ -198,6 +275,16 @@ def create_roles():
         theatre_role = Role(rolename="Theatre",description="Can manage the Bookings")
         db.session.add(theatre_role)
         db.session.commit()
+
+@app.route("/delete_theatre/<theatre_id>")
+def delete_theatre(theatre_id):
+    theatre = Theatre.query.get(theatre_id)
+    user = User.query.get(theatre.f_uid)
+    db.session.delete(theatre)
+    db.session.delete(user)
+    db.session.commit()
+    flash("Theatre deleted successfully")
+    return redirect('/admin_dashboard')
     
 def check_admin():
     check_admin = User.query.filter_by(f_rid=2).first()
@@ -205,6 +292,8 @@ def check_admin():
         admin_user = User(email="admin@gmail.com",password="admin123",f_rid=2)
         db.session.add(admin_user)
         db.session.commit()
+
+
 
 
 if __name__ == "__main__":

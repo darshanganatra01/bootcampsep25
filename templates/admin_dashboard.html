@@ -9,5 +9,22 @@
     <h2>Admin Dashboard</h2>
 
     <h4>hii {{jinjaemail}} welcome</h4>
+
+
+    <hr>
+    <h3>Theatres</h3>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                                    <span class="{{category}}">      {{ message }}    </span>
+                                 <br>
+                        {% endfor %}
+                    {% endif %}
+                    {%endwith%}
+    {% for theatre in jinja_theatres %}
+        {{theatre.theatre_name}} - {{theatre.franchise}} - {{theatre.user.email}} -- <a href="/edit_theatre/{{theatre.thid}}">Edit</a> -- <a href="/delete_theatre/{{theatre.thid}}">Delete</a><br>
+    {% endfor %}
+
+    <h3><a href="/create_theatre">Create Theatre</a></h3>
 </body>
 </html>
